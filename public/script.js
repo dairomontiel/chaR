@@ -172,8 +172,8 @@ document.addEventListener('DOMContentLoaded', () => {
             if (data.user === 'Sistema') {
                 displayMessage(data.message, 'system', '', data.timestamp);
             } else if (data.user === currentUser) {
-                // Si el mensaje es del usuario actual, ya lo mostramos como 'sent', no lo volvemos a mostrar como 'received'
-                // Esto evita duplicados visuales, ya que 'sent' es una anticipación local
+                // No mostrar nada, ya se mostró como 'sent'
+                return;
             } else {
                 displayMessage(data.message, 'received', data.user, data.timestamp);
             }

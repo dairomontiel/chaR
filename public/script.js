@@ -21,7 +21,6 @@ document.addEventListener('DOMContentLoaded', () => {
     let socket;
     let currentUser = '';
 
-    // --- Funciones auxiliares ---
     function showSection(sectionId) {
         if (sectionId === 'auth') {
             authSection.classList.remove('hidden');
@@ -42,7 +41,7 @@ document.addEventListener('DOMContentLoaded', () => {
             messageItem.innerHTML = `<span class="user">${user}:</span> ${text} <span class="timestamp">${timestamp}</span>`;
         }
         messagesDiv.appendChild(messageItem);
-        messagesDiv.scrollTop = messagesDiv.scrollHeight; // Scroll automático al último mensaje
+        messagesDiv.scrollTop = messagesDiv.scrollHeight;
     }
 
     function setAuthMessage(element, message, isSuccess) {
@@ -57,10 +56,8 @@ document.addEventListener('DOMContentLoaded', () => {
         loginMessage.className = 'message';
     }
 
-    // --- Event Listeners ---
-
     registerBtn.addEventListener('click', async () => {
-        const username = registerUsernameInput.value;
+        const username = registerUsernameInput.value.trim().toLowerCase();
         const password = registerPasswordInput.value;
         clearAuthMessages();
 
@@ -85,7 +82,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     loginBtn.addEventListener('click', async () => {
-        const username = loginUsernameInput.value;
+        const username = loginUsernameInput.value.trim().toLowerCase();
         const password = loginPasswordInput.value;
         clearAuthMessages();
 
@@ -101,9 +98,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 currentUser = username;
                 currentUsernameSpan.textContent = currentUser;
                 setAuthMessage(loginMessage, 'Inicio de sesión exitoso.', true);
-                messagesDiv.innerHTML = ''; // Limpiar mensajes antiguos
-
-                // Conectar a Socket.io con el token
+                messagesDiv.innerHTML = '';
                 connectSocket(data.token);
                 showSection('chat');
             } else {
@@ -119,33 +114,31 @@ document.addEventListener('DOMContentLoaded', () => {
         e.preventDefault();
         const message = messageInput.value;
         if (message.trim() && socket) {
-            socket.emit('chatMessage', message); // Emitir el evento 'chatMessage' al servidor
-            displayMessage(message, 'sent', currentUser, new Date().toLocaleTimeString()); // Mostrarlo instantáneamente en el lado del remitente
+            socket.emit('chatMessage', message);
+            displayMessage(message, 'sent', currentUser, new Date().toLocaleTimeString());
             messageInput.value = '';
         }
     });
 
     logoutBtn.addEventListener('click', () => {
         if (socket) {
-            socket.disconnect(); // Desconectar el socket
+            socket.disconnect();
         }
         localStorage.removeItem('jwtToken');
         currentUser = '';
         showSection('auth');
-        loginPasswordInput.value = ''; // Limpiar campo de contraseña al cerrar sesión
+        loginPasswordInput.value = '';
         loginMessage.textContent = '';
     });
 
-    // --- Función para conectar el Socket ---
     function connectSocket(token) {
-        // Asegúrate de que solo haya una conexión activa de socket.io
         if (socket && socket.connected) {
             socket.disconnect();
         }
 
         socket = io({
             auth: {
-                token: token // Enviamos el token en la autenticación del handshake
+                token: token
             }
         });
 
@@ -156,57 +149,48 @@ document.addEventListener('DOMContentLoaded', () => {
 
         socket.on('disconnect', () => {
             console.log('Desconectado del servidor de chat.');
-            // Puedes mostrar un mensaje al usuario aquí si lo deseas
         });
 
         socket.on('connect_error', (err) => {
             console.error('Error de conexión de Socket.io:', err.message);
-            // Si el token es inválido, forzamos el logout
             if (err.message === 'Token inválido.' || err.message === 'No se proporcionó token de autenticación.') {
                 alert('Tu sesión ha expirado o es inválida. Por favor, inicia sesión de nuevo.');
-                logoutBtn.click(); // Forzar el cierre de sesión
+                logoutBtn.click();
             }
         });
 
         socket.on('chatMessage', (data) => {
-            if (data.user === 'Sistema') {
+            const sender = data.user.trim().toLowerCase();
+            const localUser = currentUser.trim().toLowerCase();
+
+            if (sender === 'sistema') {
                 displayMessage(data.message, 'system', '', data.timestamp);
-            } else if (data.user === currentUser) {
-                // No mostrar nada, ya se mostró como 'sent'
-                return;
+            } else if (sender === localUser) {
+                return; // No mostrarlo, ya se mostró como "sent"
             } else {
                 displayMessage(data.message, 'received', data.user, data.timestamp);
             }
         });
     }
 
-    // --- Cargar al inicio ---
-    // Verificar si ya hay un token en el almacenamiento local al cargar la página
     const storedToken = localStorage.getItem('jwtToken');
     if (storedToken) {
-        // Intentar reconectar si hay un token
-        // NOTA: Esto intentará validar el token. Si expiró, el servidor rechazará la conexión.
-        currentUsernameSpan.textContent = 'Cargando...'; // Placeholder
-        // No sabemos el nombre de usuario de inmediato, el backend lo podría enviar o decodificarlo del token
-        // Para este ejemplo simple, no estamos enviando el nombre de usuario de vuelta con el token,
-        // pero en un caso real, el token decodificado podría tener el nombre de usuario.
-        // O podríamos almacenarlo junto al token.
-        // Por ahora, el usuario verá 'Cargando...' hasta que se conecte el socket y se obtenga el nombre de usuario (si se implementa).
-        // Para un mejor UX, el nombre de usuario debería venir en el payload del JWT y ser almacenado también en el localStorage.
-        // Por simplicidad, asumimos que el usuario que inició sesión es el mismo para fines de display.
-        const decodedToken = jwt_decode(storedToken); // Necesitaríamos una librería para decodificar JWT en el frontend
-        if (decodedToken && decodedToken.userId) {
-            currentUser = decodedToken.userId;
-            currentUsernameSpan.textContent = currentUser;
-        } else {
-             // Si el token no tiene userId o está corrupto, lo borramos
+        try {
+            const decodedToken = jwt_decode(storedToken);
+            if (decodedToken && decodedToken.userId) {
+                currentUser = decodedToken.userId.trim().toLowerCase();
+                currentUsernameSpan.textContent = currentUser;
+                connectSocket(storedToken);
+                showSection('chat');
+            } else {
+                localStorage.removeItem('jwtToken');
+                showSection('auth');
+            }
+        } catch (err) {
+            console.error('Error al decodificar el token:', err);
             localStorage.removeItem('jwtToken');
             showSection('auth');
-            return;
         }
-
-        connectSocket(storedToken);
-        showSection('chat');
     } else {
         showSection('auth');
     }

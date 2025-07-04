@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chat Seguro con JWT y Socket.io</title>
+    <link rel="stylesheet" href="styles.css">
+    <script src="https://unpkg.com/jwt-decode/build/jwt-decode.js"></script>
+    <script src="script.js"></script>
+</head>
+<body>
+    <div class="container">
+        <h1>Chat Seguro</h1>
+
+        <div id="auth-section">
+            <div class="auth-form">
+                <h2>Registro</h2>
+                <input type="text" id="registerUsername" placeholder="Usuario">
+                <input type="password" id="registerPassword" placeholder="Contraseña">
+                <button id="registerBtn">Registrarse</button>
+                <p id="registerMessage" class="message"></p>
+            </div>
+            <div class="auth-form">
+                <h2>Login</h2>
+                <input type="text" id="loginUsername" placeholder="Usuario">
+                <input type="password" id="loginPassword" placeholder="Contraseña">
+                <button id="loginBtn">Iniciar Sesión</button>
+                <p id="loginMessage" class="message"></p>
+            </div>
+        </div>
+
+        <div id="chat-section" class="hidden">
+            <h2>Bienvenido, <span id="currentUsername"></span>!</h2>
+            <div id="messages"></div>
+            <form id="messageForm">
+                <input type="text" id="messageInput" placeholder="Escribe tu mensaje..." autocomplete="off">
+                <button type="submit">Enviar</button>
+            </form>
+            <button id="logoutBtn">Cerrar Sesión</button>
+        </div>
+    </div>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>

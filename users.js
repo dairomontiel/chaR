@@ -7,8 +7,8 @@ async function hashPasswords() {
     const hashedPassword2 = await bcrypt.hash(defaultPassword, 10);
 
     return [
-        { id: 1, username: 'Marina', password: hashedPassword1 },
-        { id: 2, username: 'Dairo', password: hashedPassword2 }
+        { id: 1, username: 'alice', password: hashedPassword1 },
+        { id: 2, username: 'bob', password: hashedPassword2 }
     ];
 }
 

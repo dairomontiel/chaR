@@ -159,7 +159,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
 
-        socket.on('chatMessage', (data) => {
+        socket.on('message', (data) => {
             const sender = data.user.trim().toLowerCase();
             const localUser = currentUser.trim().toLowerCase();
 
@@ -168,7 +168,7 @@ document.addEventListener('DOMContentLoaded', () => {
             } else if (sender === localUser) {
                 return; // No mostrarlo, ya se mostró como "sent"
             } else {
-                displayMessage(data.message, 'received', data.user, data.timestamp);
+                displayMessage(data.message, 'received', data.username, data.timestamp);
             }
         });
     }
